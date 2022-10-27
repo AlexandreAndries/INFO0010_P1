@@ -11,6 +11,7 @@ public class Query{
     /*------------------------------------------------------------------------*/
     private static final short HEADER_LENGTH = 12 ;
     private static final short HEADER_WIDTH = 2 ;
+    private static final short QEND_BYTE = 1 ;
     private byte[] header ;
     private byte[] question ;
     /*------------------------------------------------------------------------*/
@@ -81,6 +82,48 @@ public class Query{
         return randID ;
     }//fin generateID()
     /*------------------------------------------------------------------------*/
+    // Question section format (RFC 1035)
+    //                                 1  1  1  1  1  1
+    //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+    // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    // |                                               |
+    // /                     QNAME                     /
+    // /                                               /
+    // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    // |                     QTYPE                     |
+    // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    // |                     QCLASS                    |
+    // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    private static byte[] createQuestion(String url){
+        // First, split the url in its different sections.
+        // This is necessary to compute the nbr of bytes QNAME will contain.
+        String[] urlSections = url.split(".", 0);
+
+        // Compute number of sections in the url (eg: www.uliege.be has 3 sections)
+        int nbrOfSections = urlSections.length ;
+
+        // Compute number of characters in the url
+        int nbrOfChar = 0;
+        for(int i = 0; i < nbrOfSections ; i++){
+            for(int j = 0; j < urlSections[i].length ; j++){
+                nbrOfChar++;
+            }
+        }
+
+        // Create ByteBuffer of appropriate length
+        int bufferLength = nbrOfChar+nbrOfSections+QEND_BYTE+2*HEADER_WIDTH;
+        ByteBuffer question = ByteBuffer.allocate(bufferLength);
+
+        // Fill buffer -------------------------------!!!!!!!
+
+        // Return created question
+        return question.array() ;
+    }//fin createQuestion()
+    /*------------------------------------------------------------------------*/
+
+
+
+
 //-----------------------------------------------------------------------------------------------------------
     /*------------------------------------------------------------------------*/
     /*- Print ----------------------------------------------------------------*/
@@ -93,7 +136,7 @@ public class Query{
         }
         return result.toString();
     }//fin toBits()
-
+    /*------------------------------------------------------------------------*/
     static void print(byte[] byteArray) {
         byte[] array = byteArray;
         for(int i = 0 ; i < array.length ; i++){
@@ -109,4 +152,4 @@ public class Query{
         print(msg.getHeader());
     }//fin main
 //-----------------------------------------------------------------------------------------------------------
-}//fin class Client
+}//fin class Query
