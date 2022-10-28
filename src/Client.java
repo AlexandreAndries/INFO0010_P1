@@ -50,6 +50,7 @@ public class Client{
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     // public static void main(String args[]){
-    //
+    //     Query msg = new Query("www.uliege.be", "TXT");
+    //     ByteBuffer bytesToSend = ByteBuffer.allocate(msg.getQuerySize());
     // }
 }//fin class Client

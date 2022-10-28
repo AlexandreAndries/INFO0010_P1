@@ -12,23 +12,70 @@ public class Query{
     private static final short HEADER_LENGTH = 12 ;
     private static final short HEADER_WIDTH = 2 ;
     private static final short QEND_BYTE = 1 ;
+    private static final short QSIZE_BYTES = 2 ;
+    private static int QuerySize = 0;
     private byte[] header ;
     private byte[] question ;
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    public Query(/*String url*/){
+    public Query(String url, String qtype){
         this.header = createHeader();
-        // this.question = createQuestion(url);
-    }
+        this.question = createQuestion(url, qtype);
+        this.QuerySize = header.length + question.length + QSIZE_BYTES ;
+    }// Query Object constructor
     /*------------------------------------------------------------------------*/
     /*- Getters  -------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     public byte[] getHeader(){
         return header;
-    }
+    }//fin getHeader()
     /*------------------------------------------------------------------------*/
-    /*- Methods --------------------------------------------------------------*/
+    public byte[] getQuestion(){
+        return question;
+    }//fin getQuestion()
+    /*------------------------------------------------------------------------*/
+    public short getQuerySize(){
+        return (short)QuerySize;
+    }//fin getQuerySize()
+    /*------------------------------------------------------------------------*/
+    /*- Public Methods -------------------------------------------------------*/
+    /*------------------------------------------------------------------------*/
+    static byte[] buildQuery(Query query){
+        short qsize = query.getQuerySize();
+        ByteBuffer bytesToSend = ByteBuffer.allocate(qsize) ;
+        bytesToSend.putShort((short)qsize);
+        bytesToSend.put(query.getHeader());
+        bytesToSend.put(query.getQuestion());
+
+        return bytesToSend.array() ;
+    }// COMMENT
+    /*------------------------------------------------------------------------*/
+    static byte[] query(byte[] bytesToSend) throws IOException {
+        // Initiate a new TCP connection with a Socket
+        Socket socket = new Socket("139.165.99.199",53);
+        OutputStream out = socket.getOutputStream() ;
+        InputStream in = socket.getInputStream() ;
+
+        // Send a query in the form of a byte array
+        out.write(bytesToSend) ;
+        out.flush();
+
+        // Retrieve the response length, as described in RFC 1035 (4.2.2 TCP usage)
+        byte[] lengthBuffer = new byte[2] ;
+        System.out.println(in.read(lengthBuffer)); // Verify it returns 2
+
+        // Convert bytes to length (data sent over the network is always big-endian)
+        int length = ((lengthBuffer[0] & 0xff) << 8) | (lengthBuffer[1] & 0xff) ;
+
+        // Retrieve the full response
+        byte[] responseBuffer = new byte[length] ;
+        in.read(responseBuffer) ; // Verify it returns the value of "length"
+
+        return responseBuffer ;
+    }//fin query()
+    /*------------------------------------------------------------------------*/
+    /*- Private Static Methods -----------------------------------------------*/
     /*------------------------------------------------------------------------*/
     // Header section format (RFC 1035)
     //                                 1  1  1  1  1  1
@@ -94,13 +141,13 @@ public class Query{
     // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     // |                     QCLASS                    |
     // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    private static byte[] createQuestion(String url){
+    private static byte[] createQuestion(String url, String type){
         // First, split the url in its different sections.
         // This is necessary to compute the nbr of bytes QNAME will contain.
-        String[] urlSections = url.split(".", 0);
+        String[] urlSections = url.split("\\.", 0);
 
         // Compute number of sections in the url (eg: www.uliege.be has 3 sections)
-        int nbrOfSections = urlSections.length() ;
+        int nbrOfSections = urlSections.length ;
 
         // Compute number of characters in the url
         int nbrOfChar = 0;
@@ -110,27 +157,60 @@ public class Query{
             }
         }
 
-        // // Create ByteBuffer of appropriate length
-        // int bufferLength = nbrOfChar+nbrOfSections+QEND_BYTE+2*HEADER_WIDTH;
-        // ByteBuffer question = ByteBuffer.allocate(bufferLength);
-        //
-        // // Fill buffer with length of section followed by char value on bytes
-        // // for each section of the url.
-        // for(int i = 0; i < nbrOfSections ; i++){
-        //     question.put((byte) urlSections[i].length());
-        //     for(int j = 0; j < urlSections[i].length(); j++){
-        //         question.put((byte) ((int) urlSections[i].charAt(j)));
-        //     }
-        // }
-        // // Add zero byte to end QNAME
-        // question.put((byte) 0x00);
+        // Create ByteBuffer of appropriate length
+        int bufferLength = nbrOfChar+nbrOfSections+QEND_BYTE+2*HEADER_WIDTH;
+        ByteBuffer question = ByteBuffer.allocate(bufferLength);
+
+        // Fill buffer with length of section followed by char value on bytes
+        // for each section of the url.
+        for(int i = 0; i < nbrOfSections ; i++){
+            question.put((byte) urlSections[i].length());
+            for(int j = 0; j < urlSections[i].length(); j++){
+                question.put((byte) ((int) urlSections[i].charAt(j)));
+            }
+        }
+
+        // Add zero byte to end QNAME
+        question.put((byte) 0x00);
+
+        // Get QTYPE value corresponding to type argument.
+        byte[] QTYPE = getQType(type) ;
+        // Copy QTYPE in the question buffer.
+        question.put(QTYPE);
+
+        // QCLASS is IN for internet, so QCLASS set to 1.
+        question.put((byte) 0x00);
+        question.put((byte) 0x01);
 
         // Return created question
         return question.array() ;
     }//fin createQuestion()
     /*------------------------------------------------------------------------*/
+    // fonc QTYPE
+    private static byte[] getQType(String type){ //--> doit renvoyer le byte[] de qtype
+        ByteBuffer TYPE = ByteBuffer.allocate(QSIZE_BYTES);
+        switch(type){
+            case "A" :
+                TYPE.put((byte) 0x00);
+                TYPE.put((byte) 0x01);
+                break;
 
+            case "TXT" :
+                TYPE.put((byte) 0x00);
+                TYPE.put((byte) 0x10);
+                break;
 
+            default :
+                TYPE.put((byte) 0x00);
+                TYPE.put((byte) 0x01);
+                System.out.println("Non-conform QTYPE. Default : A\n");
+                break;
+        }
+
+        return TYPE.array();
+    }
+    // fonc buffer length --> calcule la taille du buffer pour la question
+    //etc
 
 
 //-----------------------------------------------------------------------------------------------------------
@@ -155,10 +235,15 @@ public class Query{
     /*------------------------------------------------------------------------*/
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    public static void main(String args[]){
-        Query msg = new Query();
+    public static void main(String args[]) throws IOException{
+        Query msg = new Query("ddi.uliege.be","A");
+        byte[] q = buildQuery(msg);
+        // print(msg.getHeader());
+        // print(msg.getQuestion());
+        // print(buildQuery(msg));
+        byte[] ans = query(q) ;
 
-        print(msg.getHeader());
+
     }//fin main
 //-----------------------------------------------------------------------------------------------------------
 }//fin class Query
