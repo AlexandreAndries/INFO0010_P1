@@ -100,21 +100,30 @@ public class Query{
         String[] urlSections = url.split(".", 0);
 
         // Compute number of sections in the url (eg: www.uliege.be has 3 sections)
-        int nbrOfSections = urlSections.length ;
+        int nbrOfSections = urlSections.length() ;
 
         // Compute number of characters in the url
         int nbrOfChar = 0;
         for(int i = 0; i < nbrOfSections ; i++){
-            for(int j = 0; j < urlSections[i].length ; j++){
+            for(int j = 0; j < urlSections[i].length() ; j++){
                 nbrOfChar++;
             }
         }
 
-        // Create ByteBuffer of appropriate length
-        int bufferLength = nbrOfChar+nbrOfSections+QEND_BYTE+2*HEADER_WIDTH;
-        ByteBuffer question = ByteBuffer.allocate(bufferLength);
-
-        // Fill buffer -------------------------------!!!!!!!
+        // // Create ByteBuffer of appropriate length
+        // int bufferLength = nbrOfChar+nbrOfSections+QEND_BYTE+2*HEADER_WIDTH;
+        // ByteBuffer question = ByteBuffer.allocate(bufferLength);
+        //
+        // // Fill buffer with length of section followed by char value on bytes
+        // // for each section of the url.
+        // for(int i = 0; i < nbrOfSections ; i++){
+        //     question.put((byte) urlSections[i].length());
+        //     for(int j = 0; j < urlSections[i].length(); j++){
+        //         question.put((byte) ((int) urlSections[i].charAt(j)));
+        //     }
+        // }
+        // // Add zero byte to end QNAME
+        // question.put((byte) 0x00);
 
         // Return created question
         return question.array() ;
