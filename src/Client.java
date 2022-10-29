@@ -9,22 +9,62 @@ public class Client{
     /*------------------------------------------------------------------------*/
     /*- Variables ------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
+    // Class Constants
+    private static final short ARGS_UPLIM = 3 ;
+    private static final short ARGS_DOWNLIM = 2 ;
+    // Class Variables
     private String dnsIP ;
     private String url ;
     private String qType ;
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    // public Client(String[] args){
-    //     this.manageArgs(args);
-    // }
-    // /*------------------------------------------------------------------------*/
-    // /*- Private Static Methods -----------------------------------------------*/
-    // /*------------------------------------------------------------------------*/
-    // private static void manageArgs(String[] args){
-    //     //Hh
-    // }
+    public Client(String[] args){
+        this.manageArgs(args);
+    }
+    /*------------------------------------------------------------------------*/
+    /*- Private Static Methods -----------------------------------------------*/
+    /*------------------------------------------------------------------------*/
+    private static boolean manageArgs(String[] args){
+        if(args == null || args.length > 3 || args.length < 2){
+            return false;
+        }
 
+        argsLim = (args.length == ARGS_UPLIM) ? ARGS_UPLIM : ARGS_DOWNLIM ;
+
+        // for(int i=0 ; i < argsLim ; i++){
+        //    iterate on args to dispatch ip, dns, and opt.
+        // }
+
+        return true ;
+    }
+    /*------------------------------------------------------------------------*/
+    public static boolean isValidOption(String str){
+        if(str == "TXT" || str == "A"){
+            return true;
+        }else{
+            return false;
+        }
+    }//end isValidOption()
+    /*------------------------------------------------------------------------*/
+    public static boolean isValidIP(String str){
+        if(str==null){
+            return false;
+        }
+
+        String zeroTo255Regex = "(\\d{1,2}|(0|1)\\" + "d{2}|2[0-4]\\d|25[0-5])";
+        String ipv4Regex = zeroTo255Regex + "\\."
+                                        + zeroTo255Regex
+                                        + "\\."
+                                        + zeroTo255Regex
+                                        + "\\."
+                                        + zeroTo255Regex ;
+
+        Pattern ipv4Pattern = Pattern.compile(ipv4Regex);
+        Matcher ipv4Matcher = ipv4Pattern.matcher(str) ;
+
+        return m.matches();
+    }//end isValidIP()
     /*------------------------------------------------------------------------*/
     /*- Print ----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
@@ -35,7 +75,7 @@ public class Client{
                                            + ", TYPE="
                                            + qType
                                            +")");
-    }
+    }//end stdoutQuestion()
     /*------------------------------------------------------------------------*/
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
