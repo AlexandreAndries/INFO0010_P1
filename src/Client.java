@@ -3,6 +3,7 @@ import java.io.* ;
 import java.nio.* ;
 import java.net.* ;
 import java.util.* ;
+import java.util.regex.*;
 
 // class Client - main program
 public class Client{
@@ -13,34 +14,95 @@ public class Client{
     private static final short ARGS_UPLIM = 3 ;
     private static final short ARGS_DOWNLIM = 2 ;
     // Class Variables
-    private String dnsIP ;
-    private String url ;
-    private String qType ;
+    private String dnsIP = null;
+    private String url = null ;
+    private String qType = null ;
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     public Client(String[] args){
-        this.manageArgs(args);
-    }
+        boolean success = this.manageArgs(args);
+
+        // check for errors ?? ---- to modify
+        // either no url
+        // or no ip
+        // or no ip and no url
+        // or invalid qtype
+        if(!success){
+            System.out.println("Input ERROR\n");
+        }
+    }// Client object constuctor
+    /*------------------------------------------------------------------------*/
+    /*- Getters --------------------------------------------------------------*/
+    /*------------------------------------------------------------------------*/
+    // Returns IP address of DNS to query
+    public String getIP(){
+        return dnsIP;
+    }//end getIP()
+    /*------------------------------------------------------------------------*/
+    // Returns url to transmit to DNS server
+    public String getHostname(){
+        return url;
+    }//end getHostname()
+    /*------------------------------------------------------------------------*/
+    // Returns question type
+    public String getQType(){
+        return qType;
+    }//end getQType()
     /*------------------------------------------------------------------------*/
     /*- Private Static Methods -----------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    private static boolean manageArgs(String[] args){
+    private boolean manageArgs(String[] args){
+        // Program only accepts either 2 or 3 arguments :
+        //    - an IP for the server and a url (hostname) and no option. (2)
+        //    - or an IP for the server and a url (hostname) and an option. (3)
+        // If not enough arguments (or too many) are provided, the program should
+        // detect it, return and error and end.
         if(args == null || args.length > 3 || args.length < 2){
             return false;
         }
 
-        argsLim = (args.length == ARGS_UPLIM) ? ARGS_UPLIM : ARGS_DOWNLIM ;
+        // Compute the number of arguments entered
+        short argsLim = (args.length == ARGS_UPLIM) ? ARGS_UPLIM : ARGS_DOWNLIM ;
 
-        // for(int i=0 ; i < argsLim ; i++){
-        //    iterate on args to dispatch ip, dns, and opt.
-        // }
+        // for each argument entered to the program, we must place it in its
+        // respective variable.
+        for(short i=0 ; i < argsLim ; i++){
+            if(dnsIP == null && isValidIP(args[i])){
+                // if the arg is a valid IP and the dnsIP field has not
+                // been attributed, we place the argument in said field.
+                dnsIP = args[i] ;
+            }else if(qType == null && isValidOption(args[i])){
+                // if the arg is a valid option and the qType field has not
+                // been attributed, we place the argument in said field.
+                qType = args[i] ;
+            }else if(url == null){
+                // if the url field has not been attributed, we place the
+                // argument in said field.
+                url = args[i] ;
+            }else{
+                // if all fields have been filled, or the argument is neither
+                // an IP nor an option, and the url has been field, the extra
+                // argument is an error and the program has to end.
+                return false ;
+            }
+        }
+
+        // Check that the mandatory fields have been filled.
+        if(dnsIP == null || url == null){
+            return false ;
+        }
+
+        // If no option has been selected, by default the qType is set to A.
+        if(qType == null){
+            qType = "A" ;
+        }
 
         return true ;
-    }
+    }//end manageArgs()
     /*------------------------------------------------------------------------*/
     public static boolean isValidOption(String str){
-        if(str == "TXT" || str == "A"){
+        if(str.equals("TXT") || str.equals("A")){
             return true;
         }else{
             return false;
@@ -63,11 +125,12 @@ public class Client{
         Pattern ipv4Pattern = Pattern.compile(ipv4Regex);
         Matcher ipv4Matcher = ipv4Pattern.matcher(str) ;
 
-        return m.matches();
+        return ipv4Matcher.matches();
     }//end isValidIP()
     /*------------------------------------------------------------------------*/
     /*- Print ----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
+    // Print query to std out
     static void stdoutQuestion(String dnsIP, String url, String qType){
         System.out.println("Question (NS=" + dnsIP
                                            + ", NAME="
@@ -80,12 +143,24 @@ public class Client{
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     public static void main(String args[]) throws IOException{
-        // Need to iterate on main args ?
-        // Client client = new Client(args) ;
-        Query msg = new Query("ddi.uliege.be", "139.165.99.199", "A");
+        // Create Client object from arguments
+        Client client = new Client(args) ;
 
+        // Get NS, NAME and TYPE from built Client object
+        String NS = client.getIP();
+        String NAME = client.getHostname();
+        String TYPE = client.getQType();
+
+        // Print Question on stdout
+        stdoutQuestion(NS, NAME, TYPE);
+
+        // Send query to NS
+        Query msg = new Query(NAME, NS, TYPE);
         // print(msg.getBytesToSend());
+
+        // Catch NS answer
         byte[] ans = msg.query(msg.getBytesToSend()) ;
+
     }//end main
 }//fin class Client
 

@@ -39,7 +39,7 @@ public class Query{
     /*------------------------------------------------------------------------*/
     /*- Getters --------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    /// Return IP address of DNS to query
+    /// Returns IP address of DNS to query
     public String getDNS(){
         return dnsIP;
     }//end getDNS()
