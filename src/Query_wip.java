@@ -4,23 +4,56 @@ import java.nio.* ;
 import java.net.* ;
 import java.util.* ;
 
-// class Query
+// class Query - can be a Query or an Answer
 public class Query{
     /*------------------------------------------------------------------------*/
     /*- Variables ------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    // Class Constants
+
     private static final short HEADER_LENGTH = 12 ;
     private static final short HEADER_WIDTH = 2 ;
     private static final short QEND_BYTE = 1 ;
     private static final short QSIZE_BYTES = 2 ;
-    // Class Variables
     private static int QuerySize = 0;
+    // private String dnsIP ;
+    // private byte[] header ;
+    // private byte[] question ;
     private String dnsIP ;
     private String url ;
     private byte[] bytesToSend ;
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
+    /*------------------------------------------------------------------------*/
+    // public Query(String url, String dns, String qtype){
+    //     this.dnsIP = dns ;
+    //     this.header = createHeader();
+    //     this.question = createQuestion(url, qtype);
+    //     this.QuerySize = header.length + question.length ;
+    // }// Query Object constructor
+    /*------------------------------------------------------------------------*/
+    /*- Getters --------------------------------------------------------------*/
+    /*------------------------------------------------------------------------*/
+    // // Return header byte array
+    // public byte[] getHeader(){
+    //     return header;
+    // }//fin getHeader()
+    // /*------------------------------------------------------------------------*/
+    // // Return question byte array
+    // public byte[] getQuestion(){
+    //     return question;
+    // }//fin getQuestion()
+    /*------------------------------------------------------------------------*/
+    // Return query size
+    public short getQuerySize(){
+        return (short)QuerySize;
+    }//fin getQuerySize()
+    /*------------------------------------------------------------------------*/
+    // Return query size
+    public byte[] getBytesToSend(){
+        return bytesToSend;
+    }//fin getQuerySize()
+    /*------------------------------------------------------------------------*/
+    /*- Public Methods -------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     public Query(String url, String dns, String qtype){
         this.dnsIP = dns ;
@@ -36,34 +69,20 @@ public class Query{
         buffer.put(question);
         this.bytesToSend = buffer.array();
     }// Query Object constructor
+
+    // static byte[] buildQuery(Query query){
+    //     int qsize = query.getQuerySize() ;
+    //     ByteBuffer bytesToSend = ByteBuffer.allocate(qsize + (short)QSIZE_BYTES) ;
+    //     bytesToSend.putShort((short)qsize);
+    //     bytesToSend.put(query.getHeader());
+    //     bytesToSend.put(query.getQuestion());
+    //
+    //     return bytesToSend.array() ;
+    // }// COMMENT
     /*------------------------------------------------------------------------*/
-    /*- Getters --------------------------------------------------------------*/
-    /*------------------------------------------------------------------------*/
-    /// Return IP address of DNS to query
-    public String getDNS(){
-        return dnsIP;
-    }//end getDNS()
-    /*------------------------------------------------------------------------*/
-    // Returns url to transmit to DNS server
-    public String getURL(){
-        return url;
-    }//end getURL()
-    /*------------------------------------------------------------------------*/
-    // Returns query size
-    public short getQuerySize(){
-        return (short)QuerySize;
-    }//end getQuerySize()
-    /*------------------------------------------------------------------------*/
-    // Returns bytes (array) to transmit to DNS
-    public byte[] getBytesToSend(){
-        return bytesToSend;
-    }//end getBytesToSend()
-    /*------------------------------------------------------------------------*/
-    /*- Public Methods -------------------------------------------------------*/
-    /*------------------------------------------------------------------------*/
-    public byte[] query(byte[] bytesToSend) throws IOException {
+    static byte[] query(byte[] bytesToSend) throws IOException {
         // Initiate a new TCP connection with a Socket
-        Socket socket = new Socket(this.dnsIP,53);
+        Socket socket = new Socket("139.165.99.199",53);
         OutputStream out = socket.getOutputStream() ;
         InputStream in = socket.getInputStream() ;
 
@@ -83,7 +102,7 @@ public class Query{
         in.read(responseBuffer) ; // Verify it returns the value of "length"
 
         return responseBuffer ;
-    }//end query()
+    }//fin query()
     /*------------------------------------------------------------------------*/
     /*- Private Static Methods -----------------------------------------------*/
     /*------------------------------------------------------------------------*/
@@ -128,7 +147,7 @@ public class Query{
         // All remaining bits in the header kept at 0 as needed
         // Return created header
         return header.array() ;
-    }//end createHeader()
+    }//fin createHeader()
     /*------------------------------------------------------------------------*/
     private static byte[] generateID(){
         Random rand = new Random() ;
@@ -136,7 +155,7 @@ public class Query{
         rand.nextBytes(randID);
 
         return randID ;
-    }//end generateID()
+    }//fin generateID()
     /*------------------------------------------------------------------------*/
     // Question section format (RFC 1035)
     //                                 1  1  1  1  1  1
@@ -155,14 +174,24 @@ public class Query{
         // This is necessary to compute the nbr of bytes QNAME will contain.
         String[] urlSections = url.split("\\.", 0);
 
-        // Compute appropriate length of required ByteBuffe
-        int bufferLength = computeBufferLength(urlSections);
+        // Compute number of sections in the url (eg: www.uliege.be has 3 sections)
+        int nbrOfSections = urlSections.length ;
+
+        // Compute number of characters in the url
+        int nbrOfChar = 0;
+        for(int i = 0; i < nbrOfSections ; i++){
+            for(int j = 0; j < urlSections[i].length() ; j++){
+                nbrOfChar++;
+            }
+        }
+
         // Create ByteBuffer of appropriate length
+        int bufferLength = nbrOfChar+nbrOfSections+QEND_BYTE+2*HEADER_WIDTH;
         ByteBuffer question = ByteBuffer.allocate(bufferLength);
 
         // Fill buffer with length of section followed by char value on bytes
         // for each section of the url.
-        for(int i = 0; i < urlSections.length ; i++){
+        for(int i = 0; i < nbrOfSections ; i++){
             question.put((byte) urlSections[i].length());
             for(int j = 0; j < urlSections[i].length(); j++){
                 question.put((byte) ((int) urlSections[i].charAt(j)));
@@ -173,7 +202,7 @@ public class Query{
         question.put((byte) 0x00);
 
         // Get QTYPE value corresponding to type argument.
-        byte[] QTYPE = computeQTYPE(type) ;
+        byte[] QTYPE = getQType(type) ;
         // Copy QTYPE in the question buffer.
         question.put(QTYPE);
 
@@ -183,10 +212,10 @@ public class Query{
 
         // Return created question
         return question.array() ;
-    }//end createQuestion()
+    }//fin createQuestion()
     /*------------------------------------------------------------------------*/
-    // Compute QTYPE value
-    private static byte[] computeQTYPE(String type){
+    // fonc QTYPE
+    private static byte[] getQType(String type){
         ByteBuffer TYPE = ByteBuffer.allocate(QSIZE_BYTES);
 
         // Encode bytes according to the question type (either A or TXT). By
@@ -210,26 +239,12 @@ public class Query{
         }
 
         return TYPE.array();
-    }//end computeQTYPE()
-    /*------------------------------------------------------------------------*/
-    // Compute length of ByteBuffer
-    private static int computeBufferLength(String[] urlSections){
-        // Compute number of sections in the url (eg: www.uliege.be has 3 sections)
-        int nbrOfSections = urlSections.length ;
+    }//fin getQType()
 
-        // Compute overall number of characters in the url
-        int nbrOfChar = 0;
-        for(int i = 0; i < nbrOfSections ; i++){
-            for(int j = 0; j < urlSections[i].length() ; j++){
-                nbrOfChar++;
-            }
-        }
+    // fonc buffer length --> calcule la taille du buffer pour la question
+    // etc
 
-        // Compute appropriate length of required ByteBuffer
-        int bufferLength = nbrOfChar+nbrOfSections+QEND_BYTE+2*HEADER_WIDTH;
 
-        return bufferLength ;
-    }//end computeBufferLength()
 //-----------------------------------------------------------------------------------------------------------
     /*------------------------------------------------------------------------*/
     /*- Print ----------------------------------------------------------------*/
@@ -241,22 +256,26 @@ public class Query{
             result.append((int)(val >> (8-(i+1)) & 0x0001));
         }
         return result.toString();
-    }//end toBits()
+    }//fin toBits()
     /*------------------------------------------------------------------------*/
     static void print(byte[] byteArray) {
         byte[] array = byteArray;
         for(int i = 0 ; i < array.length ; i++){
             System.out.println(toBits(array[i]));
         }
-    }//end toBitArray()
+    }//fin toBitArray()
     /*------------------------------------------------------------------------*/
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    // public static void main(String args[]) throws IOException{
-    //     Query msg = new Query("ddi.uliege.be", "139.165.99.199", "A");
-    //
-    //     // print(msg.getBytesToSend());
-    //     byte[] ans = msg.query(msg.getBytesToSend()) ;
-    // }//end main
+    public static void main(String args[]) throws IOException{
+        Query msg = new Query("ddi.uliege.be", "139.165.99.199", "A");
+        // byte[] q = buildQuery(msg);
+
+        // print(q);
+        print(msg.getBytesToSend());
+        // byte[] ans = query(q) ;
+
+
+    }//fin main
 //-----------------------------------------------------------------------------------------------------------
-}//end class Query
+}//fin class Query
