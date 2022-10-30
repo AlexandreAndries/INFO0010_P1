@@ -13,6 +13,7 @@ public class Client{
     // Class Constants
     private static final short ARGS_UPLIM = 3 ;
     private static final short ARGS_DOWNLIM = 2 ;
+    private static final short HEADER_WIDTH = 2 ;
     // Class Variables
     private String dnsIP = null;
     private String url = null ;
@@ -128,6 +129,18 @@ public class Client{
         return ipv4Matcher.matches();
     }//end isValidIP()
     /*------------------------------------------------------------------------*/
+    // check if answerID and queryID match
+    public static boolean checkID(byte[] ans, short queryID){
+        ByteBuffer ansIDBB = ByteBuffer.allocate(HEADER_WIDTH);
+        for(short i = 0; i < HEADER_WIDTH ; i++){
+            ansIDBB.put((byte) ans[i]) ;
+        }
+        ansIDBB.position(0);
+        short ansID = ansIDBB.getShort() ;
+
+        return (ansID == queryID) ;
+    }//end checkID()
+    /*------------------------------------------------------------------------*/
     /*- Print ----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     // Print query to std out
@@ -149,10 +162,8 @@ public class Client{
                                            + ansData
                                            +")");
     }//end stdoutAnswer()
-
-
     /*------------------------------------------------------------------------*/
-    /*- Print ----------------------------------------------------------------*/
+    /*- Test print -----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     static String toBits(final byte val) {
         final StringBuilder result = new StringBuilder();
@@ -169,11 +180,6 @@ public class Client{
             System.out.println(toBits(array[i]));
         }
     }//end toBitArray()
-
-
-
-
-
     /*------------------------------------------------------------------------*/
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
@@ -191,12 +197,28 @@ public class Client{
 
         // Send query to NS
         Query msg = new Query(NAME, NS, TYPE);
-        print(msg.getBytesToSend());
+        // System.out.println("\n\n"); --- TEST
+        // print(msg.getBytesToSend()); // --- TEST
 
         // Catch NS answer
         byte[] ans = msg.query(msg.getBytesToSend()) ;
-        print(ans);
+        // System.out.println("\n\n"); --- TEST
+        // print(ans); // --- TEST
 
+        // Check whether query ID matches answer ID (if not, end program
+        // and return error message)
+        short QID = msg.getID() ;
+        if(!checkID(ans, QID)){
+            System.out.println("ERROR : non-matching query and answer.\n"); // !!! Error management
+        };
 
+        // ============================ TEST ZONE ==============================
+        short QSIZE = msg.getQSIZE() ;
+        // System.out.println("\n\n"); --- TEST
+        Answer answer = new Answer(ans, QID, QSIZE);
+        // print(answer.getHeader()); // --- TEST
+        // print(answer.getQuestion()); // --- TEST
+        // print(answer.getAnswer()); // --- TEST
+        // ============================ TEST ZONE ==============================
     }//end main
 }//fin class Client

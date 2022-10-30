@@ -16,7 +16,7 @@ public class Query{
     private static final short QSIZE_BYTES = 2 ;
     // Class Variables
     private short ID ;
-    private int QuerySize = 0;
+    private int QSIZE = 0;
     private String dnsIP ;
     private String url ;
     private byte[] bytesToSend ;
@@ -29,7 +29,7 @@ public class Query{
         byte[] header = createHeader(this);
         byte[] question = createQuestion(url, qtype);
         int qsize = header.length + question.length ;
-        this.QuerySize = qsize ;
+        this.QSIZE = qsize ;
 
         ByteBuffer buffer = ByteBuffer.allocate(qsize + (short)QSIZE_BYTES) ;
         buffer.putShort((short)qsize);
@@ -51,9 +51,14 @@ public class Query{
     }//end getHostname()
     /*------------------------------------------------------------------------*/
     // Returns query size
-    public short getQuerySize(){
-        return (short)QuerySize;
-    }//end getQuerySize()
+    public short getQSIZE(){
+        return (short)QSIZE;
+    }//end getQSIZE()
+    /*------------------------------------------------------------------------*/
+    // Returns Query ID
+    public short getID(){
+        return ID;
+    }//end getID()
     /*------------------------------------------------------------------------*/
     // Returns bytes (array) to transmit to DNS
     public byte[] getBytesToSend(){
