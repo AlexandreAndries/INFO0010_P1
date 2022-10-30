@@ -212,6 +212,7 @@ public class Client{
         // print(msg.getBytesToSend()); // --- TEST
 
         // Catch NS answer
+
         byte[] ans = msg.query(msg.getBytesToSend()) ;
         // System.out.println("\n\n"); --- TEST
         // print(ans); // --- TEST
