@@ -36,9 +36,9 @@ public class Client{
     /*- Getters --------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     // Returns IP address of DNS to query
-    public String getIP(){
+    public String getNSIP(){
         return dnsIP;
-    }//end getIP()
+    }//end getNSIP()
     /*------------------------------------------------------------------------*/
     // Returns url to transmit to DNS server
     public String getHostname(){
@@ -140,6 +140,41 @@ public class Client{
                                            +")");
     }//end stdoutQuestion()
     /*------------------------------------------------------------------------*/
+    // Print answer to std out
+    static void stdoutAnswer(String resType, String secTTL, String ansData){
+        System.out.println("Answer (TYPE=" + resType
+                                           + ", TTL="
+                                           + secTTL
+                                           + ", DATA="
+                                           + ansData
+                                           +")");
+    }//end stdoutAnswer()
+
+
+    /*------------------------------------------------------------------------*/
+    /*- Print ----------------------------------------------------------------*/
+    /*------------------------------------------------------------------------*/
+    static String toBits(final byte val) {
+        final StringBuilder result = new StringBuilder();
+
+        for(int i=0; i<8; i++){
+            result.append((int)(val >> (8-(i+1)) & 0x0001));
+        }
+        return result.toString();
+    }//end toBits()
+    /*------------------------------------------------------------------------*/
+    static void print(byte[] byteArray) {
+        byte[] array = byteArray;
+        for(int i = 0 ; i < array.length ; i++){
+            System.out.println(toBits(array[i]));
+        }
+    }//end toBitArray()
+
+
+
+
+
+    /*------------------------------------------------------------------------*/
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     public static void main(String args[]) throws IOException{
@@ -147,7 +182,7 @@ public class Client{
         Client client = new Client(args) ;
 
         // Get NS, NAME and TYPE from built Client object
-        String NS = client.getIP();
+        String NS = client.getNSIP();
         String NAME = client.getHostname();
         String TYPE = client.getQType();
 
@@ -156,38 +191,12 @@ public class Client{
 
         // Send query to NS
         Query msg = new Query(NAME, NS, TYPE);
-        // print(msg.getBytesToSend());
+        print(msg.getBytesToSend());
 
         // Catch NS answer
         byte[] ans = msg.query(msg.getBytesToSend()) ;
+        print(ans);
+
 
     }//end main
 }//fin class Client
-
-
-
-
-//-----------------------------------------------------------------------------------------------------
-// public byte[] query(byte[] bytesToSend) throws IOException {
-//     // Initiate a new TCP connection with a Socket
-//     Socket socket = new Socket( host: "Address of the server", port: 53);
-//     OutputStream out = socket.getOutputStream() ;
-//     InputStream in = socket.getInputStream() ;
-//
-//     // Send a query in the form of a byte array
-//     out.write(bytesToSend) ;
-//     out.flush();
-//
-//     // Retrieve the response length, as described in RFC 1035 (4.2.2 TCP usage)
-//     byte[] lengthBuffer = new byte[2] ;
-//     in.read(lengthBuffer); // Verify it returns 2
-//
-//     // Convert bytes to length (data sent over the network is always big-endian)
-//     int length = ((lengthBuffer[0] & 0xff) << 8) | (lengthBuffer[1] & 0xff) ;
-//
-//     // Retrieve the full response
-//     byte[] responseBuffer = new byte[length] ;
-//     in.read(responseBuffer) ; // Verify it returns the value of "length"
-//
-//     return responseBuffer ;
-// }//fin query()

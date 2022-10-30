@@ -15,7 +15,8 @@ public class Query{
     private static final short QEND_BYTE = 1 ;
     private static final short QSIZE_BYTES = 2 ;
     // Class Variables
-    private static int QuerySize = 0;
+    private short ID ;
+    private int QuerySize = 0;
     private String dnsIP ;
     private String url ;
     private byte[] bytesToSend ;
@@ -25,7 +26,7 @@ public class Query{
     public Query(String url, String dns, String qtype){
         this.dnsIP = dns ;
         this.url = url ;
-        byte[] header = createHeader();
+        byte[] header = createHeader(this);
         byte[] question = createQuestion(url, qtype);
         int qsize = header.length + question.length ;
         this.QuerySize = qsize ;
@@ -39,15 +40,15 @@ public class Query{
     /*------------------------------------------------------------------------*/
     /*- Getters --------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    /// Returns IP address of DNS to query
-    public String getDNS(){
+    // Returns IP address of DNS to query
+    public String getNSIP(){
         return dnsIP;
-    }//end getDNS()
+    }//end getNSIP()
     /*------------------------------------------------------------------------*/
     // Returns url to transmit to DNS server
-    public String getURL(){
+    public String getHostname(){
         return url;
-    }//end getURL()
+    }//end getHostname()
     /*------------------------------------------------------------------------*/
     // Returns query size
     public short getQuerySize(){
@@ -103,12 +104,16 @@ public class Query{
     // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     // |                    ARCOUNT                    |
     // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    private static byte[] createHeader(){
+    private static byte[] createHeader(Query query){
         // Allocate a ByteBuffer of size 12 (for 6 * 2 bytes)
         ByteBuffer header = ByteBuffer.allocate(HEADER_LENGTH) ;
 
-        // Generate random ID bytes for the header ID and insert them in ByteBuffer
-        header.put(generateID());
+        // Generate random ID bytes for the header ID,
+        // save ID to object var (as int) and insert bytes in ByteBuffer
+        byte[] idBytes = generateID() ;
+        ByteBuffer idBB = ByteBuffer.wrap(idBytes);
+        query.ID = idBB.getShort() ;
+        header.put(idBytes);
 
         // Set option flags in header :
         //  - Query message, so QR set to 0
@@ -249,14 +254,5 @@ public class Query{
             System.out.println(toBits(array[i]));
         }
     }//end toBitArray()
-    /*------------------------------------------------------------------------*/
-    /*- Main -----------------------------------------------------------------*/
-    /*------------------------------------------------------------------------*/
-    // public static void main(String args[]) throws IOException{
-    //     Query msg = new Query("ddi.uliege.be", "139.165.99.199", "A");
-    //
-    //     // print(msg.getBytesToSend());
-    //     byte[] ans = msg.query(msg.getBytesToSend()) ;
-    // }//end main
 //-----------------------------------------------------------------------------------------------------------
 }//end class Query
