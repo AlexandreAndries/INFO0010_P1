@@ -1,3 +1,14 @@
+/**
+ * \file Query.java
+ *
+ *
+ * \brief INFO0010 Projet 1
+ * \author Andries Alexandre s196948
+ * \version 0.1
+ * \date 30/10/2022
+ *
+ */
+
 import java.lang.* ;
 import java.io.* ;
 import java.nio.* ;

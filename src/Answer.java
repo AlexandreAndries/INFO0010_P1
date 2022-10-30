@@ -1,10 +1,21 @@
+/**
+ * \file Answer.java
+ *
+ *
+ * \brief INFO0010 Projet 1
+ * \author Andries Alexandre s196948
+ * \version 0.1
+ * \date 30/10/2022
+ *
+ */
+
 import java.lang.* ;
 import java.io.* ;
 import java.nio.* ;
 import java.net.* ;
 import java.util.* ;
 
-// Format of expected NS answer :
+// Format of expected NS answer (RFC 1035):
 //
 //    +---------------------+
 //    |        Header       |
@@ -37,7 +48,7 @@ import java.util.* ;
 // |                    ARCOUNT                    |
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 //
-// Question section format (RFC 1035)
+// Question section format (RFC 1035):
 //                                 1  1  1  1  1  1
 //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -72,7 +83,6 @@ import java.util.* ;
 // /                                               /
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
-
 // class Query
 public class Answer{
     /*------------------------------------------------------------------------*/
@@ -90,10 +100,14 @@ public class Answer{
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     public Answer(byte[] ans, short id, short QSIZE){
+        short ansLength = (short)ans.length ;
+
         ID = id ;
-        header = readHeader(ans);
-        question = readQuestion(ans, QSIZE);
-        answer = readAnswer(ans, QSIZE);
+        header = extractData(ans, (short)HEADER_LENGTH, (short)0, (short)HEADER_LENGTH);
+        question = extractData(ans, (short)QSIZE, (short)HEADER_LENGTH, (short)(HEADER_LENGTH+QSIZE));
+        answer = extractData(ans, (short)(ansLength-HEADER_LENGTH-QSIZE), (short)(HEADER_LENGTH+QSIZE), (short)ansLength);
+
+        // Now read data from the != fields and translate it
     }// Answer Object constructor
     /*------------------------------------------------------------------------*/
     /*- Getters --------------------------------------------------------------*/
@@ -121,31 +135,19 @@ public class Answer{
     /*- Public Methods -------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
 
+    // HERE do something to send back the necessay answer data to output on stdout
+
     /*------------------------------------------------------------------------*/
     /*- Private Static Methods -----------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    private static byte[] readHeader(byte[] ans){
-        ByteBuffer headerBfr = ByteBuffer.allocate(HEADER_LENGTH);
-        for(short i = 0; i < HEADER_LENGTH ; i++){
-            headerBfr.put((byte) ans[i]) ;
+    // extract bytes from specific sections
+    private static byte[] extractData(byte[] ans, short size, short start, short end){
+        ByteBuffer bfr = ByteBuffer.allocate(size);
+        for(short i = start; i < end ; i++){
+            bfr.put((byte) ans[i]) ;
         }
-        return headerBfr.array() ;
-    }//end readHeader()
+        return bfr.array() ;
+    }//end extractData()
     /*------------------------------------------------------------------------*/
-    private static byte[] readQuestion(byte[] ans, short QSIZE){
-        ByteBuffer questionBfr = ByteBuffer.allocate(QSIZE);
-        for(short i = HEADER_LENGTH; i < (HEADER_LENGTH+QSIZE) ; i++){
-            questionBfr.put((byte) ans[i]) ;
-        }
-        return questionBfr.array() ;
-    }//end readQuestion()
-    /*------------------------------------------------------------------------*/
-    private static byte[] readAnswer(byte[] ans, short QSIZE){
-        short ansLength = (short)ans.length ;
-        ByteBuffer answerBfr = ByteBuffer.allocate(ansLength - HEADER_LENGTH - QSIZE);
-        for(short i = (short)(HEADER_LENGTH+QSIZE); i < ansLength ; i++){
-            answerBfr.put((byte) ans[i]) ;
-        }
-        return answerBfr.array() ;
-    }//end readAnswer()
+    // additional static funcs ?
 }//end class Answer
