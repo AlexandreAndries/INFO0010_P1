@@ -94,15 +94,16 @@ public class Answer{
     private static final short QRBIT = 16 ;
     private static final short RCODE_START = 31 ;
     private static final short RCODE_STOP = 27 ;
-    private static final short ANCOUNT_B1 = 6;
-    private static final short ANCOUNT_B2 = 7;
+    private static final short ANCOUNT_B1 = 6 ;
+    private static final short ANCOUNT_B2 = 7 ;
+    private static final short SKIP_2BYTES = 2 ;
     // Class Variables
     private short ID ;
     private short ANCOUNT ;
-    private String[] outputIPs ;
     private byte[] header ;
     private byte[] question ;
     private byte[] answer ;
+    private OutputData[] outputIPs ;
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
@@ -136,7 +137,7 @@ public class Answer{
     }//end getANCOUNT()
     /*------------------------------------------------------------------------*/
     // Returns the IP extracted from the answer, to be printed to stdout
-    public String[] getOutputIPs(){
+    public OutputData[] getOutputIPs(){
         return outputIPs;
     }//end getOutputIPs()
     /*------------------------------------------------------------------------*/
@@ -229,10 +230,14 @@ public class Answer{
         return bit;
     }//end getBit()
     /*------------------------------------------------------------------------*/
-    private static String[] readAnswer(short ANCOUNT, byte[] answer) throws MessageException{
-        for(short i = 0 ; i < ANCOUNT ; i++){
-            //
-        }
+    private static OutputData[] readAnswer(short ANCOUNT, byte[] answer) throws MessageException{
+        short pos = SKIP_2BYTES ;
+        OutputData[] out = new OutputData[ANCOUNT];
+
+
+        // for(short i = 0 ; i < ANCOUNT ; i++){
+        //
+        // }
 
         return null;
 

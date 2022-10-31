@@ -243,6 +243,8 @@ public class Client{
         // print(answer.getHeader()); // --- TEST
         // print(answer.getQuestion()); // --- TEST
         // print(answer.getAnswer()); // --- TEST
+
+
         // ============================ TEST ZONE ==============================
     }//end main
 }//fin class Client

@@ -6,4 +6,4 @@ public class MessageException extends Exception{
     public MessageException(String text){
         super(text);
     }
-}// fin MessageException
+}//end MessageException
