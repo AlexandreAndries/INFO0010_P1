@@ -91,21 +91,29 @@ public class Answer{
     // Class Constants
     private static final short HEADER_LENGTH = 12 ;
     private static final short HEADER_WIDTH = 2 ;
+    private static final short QRBIT = 16 ;
+    private static final short RCODE_START = 31 ;
+    private static final short RCODE_STOP = 27 ;
+    private static final short ANCOUNT_B1 = 6;
+    private static final short ANCOUNT_B2 = 7;
     // Class Variables
     private short ID ;
+    private short ANCOUNT ;
     private byte[] header ;
     private byte[] question ;
     private byte[] answer ;
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    public Answer(byte[] ans, short id, short QSIZE){
+    public Answer(byte[] ans, short id, short QSIZE) throws AnswerException{
         short ansLength = (short)ans.length ;
 
         ID = id ;
         header = extractData(ans, (short)HEADER_LENGTH, (short)0, (short)HEADER_LENGTH);
         question = extractData(ans, (short)QSIZE, (short)HEADER_LENGTH, (short)(HEADER_LENGTH+QSIZE));
         answer = extractData(ans, (short)(ansLength-HEADER_LENGTH-QSIZE), (short)(HEADER_LENGTH+QSIZE), (short)ansLength);
+
+        ANCOUNT = readHeader(header) ;
 
         // Now read data from the != fields and translate it
     }// Answer Object constructor
@@ -116,6 +124,11 @@ public class Answer{
     public short getID(){
         return ID;
     }//end getID()
+    /*------------------------------------------------------------------------*/
+    // Returns ANCOUNT number of answer
+    public short getANCOUNT(){
+        return ANCOUNT;
+    }//end getANCOUNT()
     /*------------------------------------------------------------------------*/
     // Returns header section of answer
     public byte[] getHeader(){
@@ -149,5 +162,62 @@ public class Answer{
         return bfr.array() ;
     }//end extractData()
     /*------------------------------------------------------------------------*/
-    // additional static funcs ?
+    // Asserts that the answer is in fact an answer and not a query, returns the
+    // value of ANCOUNT
+    private static short readHeader(byte[] header) throws AnswerException{
+        // Check QR value. If QR != 1 : the answer is not an answer,
+        // so return an error
+        // (Check above for QR position in Header)
+        if(getBit(header, QRBIT) != 1){
+            throw new AnswerException("Answer : received message is not an answer.");
+        }
+
+        // Check RCODE value. If RCODE != 0 : return the corresponding error.
+        // (Check above for RCODE position in Header)
+        short RCODE = 0;
+        short pow = 0;
+        for(short i = RCODE_START ; i < RCODE_STOP ; i--){
+            RCODE += (short)Math.pow((double)getBit(header, i), (double)pow) ;
+            pow++;
+        }
+
+        switch(RCODE){
+            case 0 :
+                break;
+            case 1 :
+                throw new AnswerException("Answer error (RCODE=1): Format error.");
+            case 2 :
+                throw new AnswerException("Answer error (RCODE=2): Server Failure.");
+            case 3 :
+                throw new AnswerException("Answer error (RCODE=3): Name Error.");
+            case 4 :
+                throw new AnswerException("Answer error (RCODE=4): Not implemented.");
+            case 5 :
+                throw new AnswerException("Answer error (RCODE=5): Refused.");
+            default :
+                throw new AnswerException("Answer error (RCODE=6-15): Reserved.");
+        }
+
+        // Return the ANCOUNT of RR in the answer section.
+        // (Check above for ANCOUNT position in Header)
+        byte[] ancount = {(byte) header[ANCOUNT_B1], (byte) header[ANCOUNT_B2]};
+        ByteBuffer ancountBB = ByteBuffer.wrap(ancount);
+        return ancountBB.getShort() ;
+    }//end readHeader()
+    /*------------------------------------------------------------------------*/
+    // get bit at specific position in byte array
+    private static int getBit(byte[] byteArray, int idx) {
+        // get byte to which idx belongs to in the byte array
+        int idxByte = idx/8;
+        // get bit position to which idx corresponds in byte
+        int idxBit = idx%8;
+        // extract byte at position idx from byte array
+        byte valByte = byteArray[idxByte];
+        // get wanted bit in the extracted byte
+        int bit = valByte>>(8-(idxBit+1)) & 0x0001;
+
+        return bit;
+    }//end getBit()
+    /*------------------------------------------------------------------------*/
+
 }//end class Answer

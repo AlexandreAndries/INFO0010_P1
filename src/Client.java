@@ -194,7 +194,7 @@ public class Client{
     /*------------------------------------------------------------------------*/
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    public static void main(String args[]) throws IOException{
+    public static void main(String args[]) throws IOException, AnswerException{
         // Create Client object from arguments
         Client client = new Client(args) ;
 

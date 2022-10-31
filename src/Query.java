@@ -90,7 +90,7 @@ public class Query{
 
         // Retrieve the response length, as described in RFC 1035 (4.2.2 TCP usage)
         byte[] lengthBuffer = new byte[2] ;
-        System.out.println(in.read(lengthBuffer)); // Verify it returns 2
+        in.read(lengthBuffer); // Verify it returns 2
 
         // Convert bytes to length (data sent over the network is always big-endian)
         int length = ((lengthBuffer[0] & 0xff) << 8) | (lengthBuffer[1] & 0xff) ;
