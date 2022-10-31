@@ -105,7 +105,7 @@ public class Answer{
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    public Answer(byte[] ans, short id, short QSIZE) throws AnswerException{
+    public Answer(byte[] ans, short id, short QSIZE) throws MessageException{
         short ansLength = (short)ans.length ;
 
         ID = id ;
@@ -148,7 +148,7 @@ public class Answer{
     /*- Public Methods -------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
 
-    // HERE do something to send back the necessay answer data to output on stdout
+    // HERE do something to send back the necessay answer data to output on stdout !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     /*------------------------------------------------------------------------*/
     /*- Private Static Methods -----------------------------------------------*/
@@ -164,12 +164,12 @@ public class Answer{
     /*------------------------------------------------------------------------*/
     // Asserts that the answer is in fact an answer and not a query, returns the
     // value of ANCOUNT
-    private static short readHeader(byte[] header) throws AnswerException{
+    private static short readHeader(byte[] header) throws MessageException{
         // Check QR value. If QR != 1 : the answer is not an answer,
         // so return an error
         // (Check above for QR position in Header)
         if(getBit(header, QRBIT) != 1){
-            throw new AnswerException("Answer : received message is not an answer.");
+            throw new MessageException("Answer : received message is not an answer.");
         }
 
         // Check RCODE value. If RCODE != 0 : return the corresponding error.
@@ -185,17 +185,17 @@ public class Answer{
             case 0 :
                 break;
             case 1 :
-                throw new AnswerException("Answer error (RCODE=1): Format error.");
+                throw new MessageException("Answer error (RCODE=1): Format error.");
             case 2 :
-                throw new AnswerException("Answer error (RCODE=2): Server Failure.");
+                throw new MessageException("Answer error (RCODE=2): Server Failure.");
             case 3 :
-                throw new AnswerException("Answer error (RCODE=3): Name Error.");
+                throw new MessageException("Answer error (RCODE=3): Name Error.");
             case 4 :
-                throw new AnswerException("Answer error (RCODE=4): Not implemented.");
+                throw new MessageException("Answer error (RCODE=4): Not implemented.");
             case 5 :
-                throw new AnswerException("Answer error (RCODE=5): Refused.");
+                throw new MessageException("Answer error (RCODE=5): Refused.");
             default :
-                throw new AnswerException("Answer error (RCODE=6-15): Reserved.");
+                throw new MessageException("Answer error (RCODE=6-15): Reserved.");
         }
 
         // Return the ANCOUNT of RR in the answer section.

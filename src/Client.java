@@ -32,7 +32,7 @@ public class Client{
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    public Client(String[] args){
+    public Client(String[] args) throws MessageException{
         boolean success = this.manageArgs(args);
 
         // check for errors ?? ---- to modify
@@ -41,7 +41,7 @@ public class Client{
         // or no ip and no url
         // or invalid qtype
         if(!success){
-            System.out.println("Input ERROR\n");
+            throw new MessageException("Query : Format error. Please check your program inputs and retry.");
         }
     }// Client object constuctor
     /*------------------------------------------------------------------------*/
@@ -194,7 +194,7 @@ public class Client{
     /*------------------------------------------------------------------------*/
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    public static void main(String args[]) throws IOException, AnswerException{
+    public static void main(String args[]) throws IOException, MessageException{
         // Create Client object from arguments
         Client client = new Client(args) ;
 
@@ -208,20 +208,15 @@ public class Client{
 
         // Send query to NS
         Query msg = new Query(NAME, NS, TYPE);
-        // System.out.println("\n\n"); --- TEST
-        // print(msg.getBytesToSend()); // --- TEST
 
         // Catch NS answer
-
         byte[] ans = msg.query(msg.getBytesToSend()) ;
-        // System.out.println("\n\n"); --- TEST
-        // print(ans); // --- TEST
 
         // Check whether query ID matches answer ID (if not, end program
         // and return error message)
         short QID = msg.getID() ;
         if(!checkID(ans, QID)){
-            System.out.println("ERROR : non-matching query and answer.\n"); // !!! Error management
+            throw new MessageException("DNS : Non-matching query and answer.");
         };
 
         // ============================ TEST ZONE ==============================
