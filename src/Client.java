@@ -35,13 +35,12 @@ public class Client{
     public Client(String[] args) throws MessageException{
         boolean success = this.manageArgs(args);
 
-        // check for errors ?? ---- to modify
-        // either no url
+        // Either no url
         // or no ip
         // or no ip and no url
         // or invalid qtype
         if(!success){
-            throw new MessageException("Query : Format error. Please check your program inputs and retry.");
+            throw new MessageException("Query error : Format error. Please check your program inputs and retry.");
         }
     }// Client object constuctor
     /*------------------------------------------------------------------------*/
@@ -152,6 +151,19 @@ public class Client{
         return (ansID == queryID) ;
     }//end checkID()
     /*------------------------------------------------------------------------*/
+    static public Timer setTimeout() {
+        TimerTask task = new TimerTask() {
+          public void run() {
+            System.out.println("DNS server took too long to respond (>5s). Exiting program.");
+            System.exit(1);
+          }
+        };
+        Timer timer = new Timer("Timer");
+        long delay = 5000L;
+        timer.schedule(task, delay);
+        return timer;
+    }
+    /*------------------------------------------------------------------------*/
     /*- Print ----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     // Print query to std out
@@ -208,15 +220,20 @@ public class Client{
 
         // Send query to NS
         Query msg = new Query(NAME, NS, TYPE);
+        // print(msg.getBytesToSend()); // --- TEST
+        // System.out.println("\n\n"); // --- TEST
 
         // Catch NS answer
+        Timer timeout = setTimeout();
         byte[] ans = msg.query(msg.getBytesToSend()) ;
+        timeout.cancel();
+        // print(ans); // --- TEST
 
         // Check whether query ID matches answer ID (if not, end program
         // and return error message)
         short QID = msg.getID() ;
         if(!checkID(ans, QID)){
-            throw new MessageException("DNS : Non-matching query and answer.");
+            throw new MessageException("DNS error : Non-matching query and answer.");
         };
 
         // ============================ TEST ZONE ==============================

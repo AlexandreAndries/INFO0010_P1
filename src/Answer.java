@@ -99,23 +99,28 @@ public class Answer{
     // Class Variables
     private short ID ;
     private short ANCOUNT ;
+    private String[] outputIPs ;
     private byte[] header ;
     private byte[] question ;
     private byte[] answer ;
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
+    // COMMENT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public Answer(byte[] ans, short id, short QSIZE) throws MessageException{
         short ansLength = (short)ans.length ;
 
         ID = id ;
         header = extractData(ans, (short)HEADER_LENGTH, (short)0, (short)HEADER_LENGTH);
-        question = extractData(ans, (short)QSIZE, (short)HEADER_LENGTH, (short)(HEADER_LENGTH+QSIZE));
-        answer = extractData(ans, (short)(ansLength-HEADER_LENGTH-QSIZE), (short)(HEADER_LENGTH+QSIZE), (short)ansLength);
+        question = extractData(ans, (short)(QSIZE-HEADER_LENGTH), (short)HEADER_LENGTH, (short)QSIZE);
+        answer = extractData(ans, (short)(ansLength-QSIZE), (short)QSIZE, (short)ansLength);
 
         ANCOUNT = readHeader(header) ;
+        if(ANCOUNT == 0){
+            throw new MessageException("Answer error : No answer received from DNS.");
+        }
 
-        // Now read data from the != fields and translate it
+        outputIPs = readAnswer(ANCOUNT, answer) ;
     }// Answer Object constructor
     /*------------------------------------------------------------------------*/
     /*- Getters --------------------------------------------------------------*/
@@ -129,6 +134,11 @@ public class Answer{
     public short getANCOUNT(){
         return ANCOUNT;
     }//end getANCOUNT()
+    /*------------------------------------------------------------------------*/
+    // Returns the IP extracted from the answer, to be printed to stdout
+    public String[] getOutputIPs(){
+        return outputIPs;
+    }//end getOutputIPs()
     /*------------------------------------------------------------------------*/
     // Returns header section of answer
     public byte[] getHeader(){
@@ -169,11 +179,11 @@ public class Answer{
         // so return an error
         // (Check above for QR position in Header)
         if(getBit(header, QRBIT) != 1){
-            throw new MessageException("Answer : received message is not an answer.");
+            throw new MessageException("Answer error : Received message is not an answer.");
         }
 
         // Check RCODE value. If RCODE != 0 : return the corresponding error.
-        // (Check above for RCODE position in Header)
+        // (Check above for RCODE position in Header) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! bitsToInt func ??
         short RCODE = 0;
         short pow = 0;
         for(short i = RCODE_START ; i < RCODE_STOP ; i--){
@@ -219,5 +229,12 @@ public class Answer{
         return bit;
     }//end getBit()
     /*------------------------------------------------------------------------*/
+    private static String[] readAnswer(short ANCOUNT, byte[] answer) throws MessageException{
+        for(short i = 0 ; i < ANCOUNT ; i++){
+            //
+        }
 
+        return null;
+
+    }//end readAnswer()
 }//end class Answer
