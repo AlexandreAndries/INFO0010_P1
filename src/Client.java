@@ -9,6 +9,15 @@
  *
  */
 
+ /** Class description :
+  *
+  * Client class is used as the main program. The program manages the user inputs,
+  * forms a query from those inputs (or ends and returns an error if the inputs
+  * are not adequate) and sends it through a socket. The program then parses the
+  * received answers and output to stdout the gathered data. If the Name Server
+  * takes too long to answer, the program shuts down after a 5 seconds timeout.
+  *
+  */
 import java.lang.* ;
 import java.io.* ;
 import java.nio.* ;
@@ -22,13 +31,13 @@ public class Client{
     /*- Variables ------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     // Class Constants
-    private static final short ARGS_UPLIM = 3 ;
-    private static final short ARGS_DOWNLIM = 2 ;
-    private static final short HEADER_WIDTH = 2 ;
+    private static final short ARGS_UPLIM = 3 ;     // Upper limit of nbr of inputs
+    private static final short ARGS_DOWNLIM = 2 ;   // Lower limit of nbr of inputs
+    private static final short HEADER_WIDTH = 2 ;   // Length of 2 bytes used by data in header
     // Class Variables
-    private String dnsIP = null;
-    private String url = null ;
-    private String qType = null ;
+    private String dnsIP = null;                    // NS IP address
+    private String url = null ;                     // hostname to query
+    private String qType = null ;                   // Type of query
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
@@ -40,7 +49,7 @@ public class Client{
         // or no ip and no url
         // or invalid qtype
         if(!success){
-            throw new MessageException("Query error : Format error. Please check your program inputs and retry.");
+            throw new MessageException("Query error : Format error. Please check your program inputs and retry. Only A and TXT qtypes are supported by this client");
         }
     }// Client object constuctor
     /*------------------------------------------------------------------------*/
@@ -63,7 +72,13 @@ public class Client{
     /*------------------------------------------------------------------------*/
     /*- Private Static Methods -----------------------------------------------*/
     /*------------------------------------------------------------------------*/
+    // Manage the inputs to the program
     private boolean manageArgs(String[] args){
+        // Send help to stdout if asked
+        if(args.length == 1 && (args[0].equals("h") || args[0].equals("help"))){
+            printHelp(); // prints help and ends program
+        }
+
         // Program only accepts either 2 or 3 arguments :
         //    - an IP for the server and a url (hostname) and no option. (2)
         //    - or an IP for the server and a url (hostname) and an option. (3)
@@ -112,6 +127,7 @@ public class Client{
         return true ;
     }//end manageArgs()
     /*------------------------------------------------------------------------*/
+    // Check if input option is valid (TXT or A)
     public static boolean isValidOption(String str){
         if(str.equals("TXT") || str.equals("A")){
             return true;
@@ -120,6 +136,7 @@ public class Client{
         }
     }//end isValidOption()
     /*------------------------------------------------------------------------*/
+    // Check if input IP is valid (format : IPv4: [0:255].[0:255].[0:255].[0:255])
     public static boolean isValidIP(String str){
         if(str==null){
             return false;
@@ -151,10 +168,11 @@ public class Client{
         return (ansID == queryID) ;
     }//end checkID()
     /*------------------------------------------------------------------------*/
+    // Set 5 seconds timeout in case DNS takes too long to answer query
     static public Timer setTimeout() {
         TimerTask task = new TimerTask() {
           public void run() {
-            System.out.println("DNS server took too long to respond (>5s). Exiting program.");
+            System.out.println("DNS server took too long to respond (>5sec). Exiting program.\n");
             System.exit(1);
           }
         };
@@ -162,9 +180,20 @@ public class Client{
         long delay = 5000L;
         timer.schedule(task, delay);
         return timer;
-    }
+    }//end setTimeout()
     /*------------------------------------------------------------------------*/
     /*- Print ----------------------------------------------------------------*/
+    /*------------------------------------------------------------------------*/
+    // Print help !
+    static void printHelp(){
+        System.out.println("HELP: \n\n");
+        System.out.println("This program takes 2 mandatory arguments, and 1 optional argument :");
+        System.out.println("\t - <name server IP>");
+        System.out.println("\t - <domain name to query>");
+        System.out.println("\t - <question type> [optional, default: A]");
+        System.out.println("\n Inputs order does not matter. Question type can be TXT or A only.\n");
+        System.exit(0) ;
+    }//end printHelp()
     /*------------------------------------------------------------------------*/
     // Print query to std out
     static void stdoutQuestion(String dnsIP, String url, String qType){
@@ -179,27 +208,11 @@ public class Client{
     // Print answer to std out
     static void stdoutAnswer(OutputData[] out, short ancount){
         for(short i = 0; i < ancount ; i++){
-            out[i].printOutputData();
+            if(out[i] != null){
+                out[i].printOutputData();
+            }
         }
     }//end stdoutAnswer()
-    /*------------------------------------------------------------------------*/
-    /*- Test print -----------------------------------------------------------*/
-    /*------------------------------------------------------------------------*/
-    static String toBits(final byte val) {
-        final StringBuilder result = new StringBuilder();
-
-        for(int i=0; i<8; i++){
-            result.append((int)(val >> (8-(i+1)) & 0x0001));
-        }
-        return result.toString();
-    }//end toBits()
-    /*------------------------------------------------------------------------*/
-    static void print(byte[] byteArray) {
-        byte[] array = byteArray;
-        for(int i = 0 ; i < array.length ; i++){
-            System.out.println(toBits(array[i]));
-        }
-    }//end toBitArray()
     /*------------------------------------------------------------------------*/
     /*- Main -----------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
@@ -217,14 +230,11 @@ public class Client{
 
         // Send query to NS
         Query msg = new Query(NAME, NS, TYPE);
-        // print(msg.getBytesToSend()); // --- TEST
-        // System.out.println("\n\n"); // --- TEST
 
         // Catch NS answer
         Timer timeout = setTimeout();
         byte[] ans = msg.query(msg.getBytesToSend()) ;
         timeout.cancel();
-        // print(ans); // --- TEST
 
         // Check whether query ID matches answer ID (if not, end program
         // and return error message)
@@ -233,18 +243,11 @@ public class Client{
             throw new MessageException("DNS error : Non-matching query and answer.");
         };
 
-        // ============================ TEST ZONE ==============================
+        // Get QSIZE from query, and parse received answer
         short QSIZE = msg.getQSIZE() ;
-        // System.out.println("\n\n"); --- TEST
         Answer answer = new Answer(ans, QID, QSIZE);
-        // print(answer.getHeader()); // --- TEST
-        // print(answer.getQuestion()); // --- TEST
-        // print(answer.getAnswer()); // --- TEST
 
-        stdoutAnswer(answer.getOutputIPs(), answer.getANCOUNT());
-
-
-
-        // ============================ TEST ZONE ==============================
+        // Print gathered data on stdout
+        stdoutAnswer(answer.getOutput(), answer.getANCOUNT());
     }//end main
 }//fin class Client

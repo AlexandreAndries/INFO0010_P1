@@ -9,6 +9,12 @@
  *
  */
 
+ /** Class description :
+  *
+  * Answer class is used to represent the answer received from the DNS.
+  * An answer object is built according to the RFC1035 standards.
+  *
+  */
 import java.lang.* ;
 import java.io.* ;
 import java.nio.* ;
@@ -89,39 +95,45 @@ public class Answer{
     /*- Variables ------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     // Class Constants
-    private static final short HEADER_LENGTH = 12 ;
-    private static final short HEADER_WIDTH = 2 ;
-    private static final short QRBIT = 16 ;
-    private static final short RCODE_START = 31 ;
-    private static final short RCODE_STOP = 27 ;
-    private static final short ANCOUNT_B1 = 6 ;
-    private static final short ANCOUNT_B2 = 7 ;
-    private static final short SKIP_2BYTES = 2 ;
+    private static final short HEADER_LENGTH = 12 ;  // Length in bytes of header section
+    private static final short HEADER_WIDTH = 2 ;    // Length of 2 bytes used by data in header
+    private static final short QRBIT = 16 ;          // Position of QR bit in the header
+    private static final short RCODE_START = 31 ;    // Position of first RCODE bit in the header
+    private static final short RCODE_STOP = 27 ;     // Position of last RCODE bit in the header
+    private static final short ANCOUNT_B1 = 6 ;      // Position of first ANCOUNT byte in the header
+    private static final short ANCOUNT_B2 = 7 ;      // Position of last ANCOUNT byte in the header
+    private static final short SKIP_2BYTES = 2 ;     // Position diff to skip 2 bytes
+    private static final short SKIP_4BYTES = 4 ;     // Position diff to skip 4 bytes
     // Class Variables
-    private short ID ;
-    private short ANCOUNT ;
-    private byte[] header ;
-    private byte[] question ;
-    private byte[] answer ;
-    private OutputData[] outputIPs ;
+    private short ID ;                               // ID of the answer (short value)
+    private short ANCOUNT ;                          // Answer count sent by answer
+    private byte[] header ;                          // byte array of the header section from the answer
+    private byte[] question ;                        // byte array of the question section from the answer
+    private byte[] answer ;                          // byte array of the proper answer section from the answer
+    private OutputData[] output ;                    // output created from parsed data
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    // COMMENT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // Create an answer object from the byte array received from the DNS.
+    // The answer is split in its different sections (header, question, answer)
+    // These are then parsed to extract the necessary data.
     public Answer(byte[] ans, short id, short QSIZE) throws MessageException{
         short ansLength = (short)ans.length ;
 
+        // Retrieve ans ID and split sections
         ID = id ;
         header = extractData(ans, (short)HEADER_LENGTH, (short)0, (short)HEADER_LENGTH);
         question = extractData(ans, (short)(QSIZE-HEADER_LENGTH), (short)HEADER_LENGTH, (short)QSIZE);
         answer = extractData(ans, (short)(ansLength-QSIZE), (short)QSIZE, (short)ansLength);
 
+        // Read header data - if ANCOUNT = 0 : no valid answer has been received
         ANCOUNT = readHeader(header) ;
         if(ANCOUNT == 0){
             throw new MessageException("Answer error : No answer received from DNS.");
         }
 
-        outputIPs = readAnswer(ANCOUNT, answer) ;
+        // Read answer section and extract the data to output
+        output = readAnswer(ANCOUNT, answer) ;
     }// Answer Object constructor
     /*------------------------------------------------------------------------*/
     /*- Getters --------------------------------------------------------------*/
@@ -136,10 +148,10 @@ public class Answer{
         return ANCOUNT;
     }//end getANCOUNT()
     /*------------------------------------------------------------------------*/
-    // Returns the IP extracted from the answer, to be printed to stdout
-    public OutputData[] getOutputIPs(){
-        return outputIPs;
-    }//end getOutputIPs()
+    // Returns the data extracted from the answer, to be printed to stdout
+    public OutputData[] getOutput(){
+        return output;
+    }//end getOutput()
     /*------------------------------------------------------------------------*/
     // Returns header section of answer
     public byte[] getHeader(){
@@ -155,12 +167,6 @@ public class Answer{
     public byte[] getAnswer(){
         return answer;
     }//end getAnswer()
-    /*------------------------------------------------------------------------*/
-    /*- Public Methods -------------------------------------------------------*/
-    /*------------------------------------------------------------------------*/
-
-    // HERE do something to send back the necessay answer data to output on stdout !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     /*------------------------------------------------------------------------*/
     /*- Private Static Methods -----------------------------------------------*/
     /*------------------------------------------------------------------------*/
@@ -184,7 +190,7 @@ public class Answer{
         }
 
         // Check RCODE value. If RCODE != 0 : return the corresponding error.
-        // (Check above for RCODE position in Header) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! bitsToInt func ??
+        // (Check above for RCODE position in Header)
         short RCODE = 0;
         short pow = 0;
         for(short i = RCODE_START ; i < RCODE_STOP ; i--){
@@ -216,7 +222,7 @@ public class Answer{
         return ancountBB.getShort() ;
     }//end readHeader()
     /*------------------------------------------------------------------------*/
-    // get bit at specific position in byte array
+    // Get bit at specific position in byte array
     private static int getBit(byte[] byteArray, int idx) {
         // get byte to which idx belongs to in the byte array
         int idxByte = idx/8;
@@ -230,7 +236,10 @@ public class Answer{
         return bit;
     }//end getBit()
     /*------------------------------------------------------------------------*/
-    // ---------------------------------------------------------------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // Read answer section and extarct the data sent by the name server.
+    // Only A and TXT type answers are taken into account, the rest is
+    // purposedly ignored.
+    // The process of parsing the answer is repeated ANCOUNT times in a loop.
     private static OutputData[] readAnswer(short ANCOUNT, byte[] answer) throws MessageException{
         // Initialise position-index
         short pos = SKIP_2BYTES ;
@@ -239,92 +248,117 @@ public class Answer{
         // multiple answers received from DNS server)
         OutputData[] out = new OutputData[ANCOUNT];
         // Temporary variables to hold data extracted from the answers
-        short tmpType ;
+        short tmpTYPE ;
         short RDLength ;
         int ttl;
-        String ip ;
+        String data ;
         String type ;
 
         // Loop over the ANCOUNT answers sent by the DNS
         for(short i = 0 ; i < ANCOUNT ; i++){
             // Retrieve TYPE related data
-            byte[] tmpB = {(byte) answer[pos], (byte) answer[pos+1]};
-            ByteBuffer tmpBB = ByteBuffer.wrap(tmpB);
-            tmpType = tmpBB.getShort() ;
+            byte[] tmpTp = {(byte) answer[pos],
+                            (byte) answer[pos+1]};
+            tmpTYPE = toShort(tmpTp) ;
 
             // Increase position-idx by 4 to index to TTL-related bytes
-            pos += 4 ;
+            pos += SKIP_4BYTES ;
 
             // Retrieve TTL related data
-            byte[] tmpT = {(byte) answer[pos],
-                           (byte) answer[pos+1],
-                           (byte) answer[pos+2],
-                           (byte) answer[pos+3]};
-            ByteBuffer tmpTT = ByteBuffer.wrap(tmpT);
-            ttl = tmpTT.getInt() ;
+            byte[] tmpTTL = {(byte) answer[pos],
+                             (byte) answer[pos+1],
+                             (byte) answer[pos+2],
+                             (byte) answer[pos+3]};
+            ttl = toInt(tmpTTL) ;
             // Increase position-idx by 4 to index to RDLENGTH-related bytes
-            pos += 4 ;
+            pos += SKIP_4BYTES ;
 
             // Retrieve length of RDATA
-            byte[] tmpR = {(byte) answer[pos], (byte) answer[pos+1]};
-            ByteBuffer tmpRR = ByteBuffer.wrap(tmpR);
-            RDLength = tmpRR.getShort() ;
+            byte[] tmpRDL = {(byte) answer[pos],
+                             (byte) answer[pos+1]};
+            RDLength = toShort(tmpRDL) ;
 
             // Increase position-idx by 4 to index to RDATA-related bytes
-            pos += 2 ;
+            pos += SKIP_2BYTES ;
 
-            // Retrieve RDATA
-            switch(tmpType){
+            // Retrieve RDATA (either type TXT or type A)
+            switch(tmpTYPE){
                 case 1 :
                     type = "A" ;
                     byte[] tmpP = {(byte) answer[pos],
                                    (byte) answer[pos+1],
                                    (byte) answer[pos+2],
                                    (byte) answer[pos+3]};
-                    ip = retIPTypeA(tmpP);
+                    data = retDataTypeA(tmpP);
                     // set pos to next first byte of next answer for next iteration
                     pos += RDLength+2 ;
                     break ;
                 case 16 :
                     type = "TXT";
-                    pos++ ;
+                    pos++ ; // ignore first byte of RDATA
                     ByteBuffer bfr = ByteBuffer.allocate(RDLength);
                     for(short j = pos; j < pos+RDLength-1 ; j++){
                         bfr.put((byte) answer[j]) ;
                     }
                     tmpP = bfr.array() ;
-                    ip = retIPTypeTXT(tmpP);
+                    data = retDataTypeTXT(tmpP);
+                    // set pos to next first byte of next answer for next iteration
                     pos += RDLength+1 ;
                     break ;
                 default :
                     type = null ;
-                    ip = null ;
+                    data = null ;
                     break ;
             }
 
-            // ---> Create Output object from gathered data.
-            out[i] = new OutputData(ttl, ip, type);
+            if(type == null || data == null){
+                // Ignore non-supported qtype
+                out[i] = null ;
+            }else{
+                // ---> Create Output object from gathered data.
+                out[i] = new OutputData(ttl, data, type);
+            }
         }
 
         // Return OutputData array containing data to print to stdout
         return out;
     }//end readAnswer()
     /*------------------------------------------------------------------------*/
-    // Translate RDATA to IP address for type A
-    private static String retIPTypeA(byte[] rdata){
+    // Convert byte array of size 4 to its int value
+    private static int toInt(byte[] array) throws MessageException{
+        // an Integer is written on 4 bytes
+        if(array.length != 4){
+            throw new MessageException("Answer Error : wrong byte array length.");
+        }
+        ByteBuffer tmpBB = ByteBuffer.wrap(array);
+        return tmpBB.getInt() ;
+    }//end toInt()
+    /*------------------------------------------------------------------------*/
+    // Convert byte array of size 2 to its short value
+    private static short toShort(byte[] array) throws MessageException{
+        // a Short is written on 2 bytes
+        if(array.length != 2){
+            throw new MessageException("Answer Error : wrong byte array length.");
+        }
+        ByteBuffer tmpBB = ByteBuffer.wrap(array);
+        return tmpBB.getShort() ;
+    }//end toShort()
+    /*------------------------------------------------------------------------*/
+    // Translate RDATA for type A
+    private static String retDataTypeA(byte[] rdata){
         String ip = String.valueOf(rdata[0] & 0xff);
         for (short i = 1; i < rdata.length; i++) {
             ip = ip + "." + String.valueOf(rdata[i] & 0xff);
         }
         return ip;
-    }//end retIPTypeA()
+    }//end retDataTypeA()
     /*------------------------------------------------------------------------*/
-    // Translate RDATA to IP address for type TXT
-    private static String retIPTypeTXT(byte[] rdata){
+    // Translate RDATA for type TXT
+    private static String retDataTypeTXT(byte[] rdata){
         String str = Character.toString(rdata[0]);
         for(short i = 1; i < rdata.length ; i++){
             str = str + (char)rdata[i] ;
         }
         return str ;
-    }//end retIPTypeTXT()
+    }//end retDataTypeTXT()
 }//end class Answer

@@ -9,6 +9,14 @@
  *
  */
 
+ /** Class description :
+  *
+  * OutputData class is used to print the data gathered from the answer received
+  * from the DNS.
+  * The required fields are printed on stdout.
+  *
+  */
+
 import java.lang.* ;
 import java.io.* ;
 import java.nio.* ;
@@ -20,18 +28,16 @@ public class OutputData{
     /*------------------------------------------------------------------------*/
     /*- Variables ------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    // Class Constants
-
     // Class Variables
-    private int TTL ;
-    private String IP ;
-    private String TYPE ;
+    private int TTL ;                             // TTL value
+    private String DATA ;                         // Data to print
+    private String TYPE ;                         // answer type
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    public OutputData(int ttl, String ip, String type){
+    public OutputData(int ttl, String data, String type){
         TTL = ttl ;
-        IP = ip ;
+        DATA = data ;
         TYPE = type ;
     }// Answer Object constructor
     /*------------------------------------------------------------------------*/
@@ -42,10 +48,10 @@ public class OutputData{
         return TTL;
     }//end getTTL()
     /*------------------------------------------------------------------------*/
-    // Returns this output's IP
-    public String getIP(){
-        return IP;
-    }//end getIP()
+    // Returns this output's DATA
+    public String getDATA(){
+        return DATA;
+    }//end getDATA()
     /*------------------------------------------------------------------------*/
     // Returns this output's TYPE
     public String getTYPE(){
@@ -59,7 +65,7 @@ public class OutputData{
                                            + ", TTL="
                                            + TTL
                                            + ", DATA=\""
-                                           + IP
+                                           + DATA
                                            +"\")");
     }//end printOutputData()
 }//end class OutputData

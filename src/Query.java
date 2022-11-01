@@ -9,6 +9,13 @@
  *
  */
 
+ /** Class description :
+  *
+  * Query class is used to represent the query to send over the network.
+  * A Query object is built according to the RFC1035 standards.
+  *
+  */
+
 import java.lang.* ;
 import java.io.* ;
 import java.nio.* ;
@@ -21,16 +28,16 @@ public class Query{
     /*- Variables ------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     // Class Constants
-    private static final short HEADER_LENGTH = 12 ;
-    private static final short HEADER_WIDTH = 2 ;
-    private static final short QEND_BYTE = 1 ;
-    private static final short QSIZE_BYTES = 2 ;
+    private static final short HEADER_LENGTH = 12 ; // Length in bytes of header section
+    private static final short HEADER_WIDTH = 2 ;   // Length of 2 bytes used by data in header
+    private static final short QEND_BYTE = 1 ;      // Nbr of bytes taken by QEND
+    private static final short QSIZE_BYTES = 2 ;    // Nbr of bytes taken by QSIZE
     // Class Variables
-    private short ID ;
-    private int QSIZE = 0;
-    private String dnsIP ;
-    private String url ;
-    private byte[] bytesToSend ;
+    private short ID ;                              // ID of the query (short value)
+    private int QSIZE = 0;                          // query size
+    private String dnsIP ;                          // NS IP address
+    private String url ;                            // hostname to query
+    private byte[] bytesToSend ;                    // byte array to send as query
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
@@ -78,6 +85,7 @@ public class Query{
     /*------------------------------------------------------------------------*/
     /*- Public Methods -------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
+    // Send query through socket over the network.
     public byte[] query(byte[] bytesToSend) throws IOException {
         // Initiate a new TCP connection with a Socket
         Socket socket = new Socket(this.dnsIP,53);
@@ -151,6 +159,7 @@ public class Query{
         return header.array() ;
     }//end createHeader()
     /*------------------------------------------------------------------------*/
+    // Generate random ID for the query
     private static byte[] generateID(){
         Random rand = new Random() ;
         byte[] randID = new byte[HEADER_WIDTH] ;
@@ -251,24 +260,4 @@ public class Query{
 
         return bufferLength ;
     }//end computeBufferLength()
-//-----------------------------------------------------------------------------------------------------------
-    /*------------------------------------------------------------------------*/
-    /*- Print ----------------------------------------------------------------*/
-    /*------------------------------------------------------------------------*/
-    static String toBits(final byte val) {
-        final StringBuilder result = new StringBuilder();
-
-        for(int i=0; i<8; i++){
-            result.append((int)(val >> (8-(i+1)) & 0x0001));
-        }
-        return result.toString();
-    }//end toBits()
-    /*------------------------------------------------------------------------*/
-    static void print(byte[] byteArray) {
-        byte[] array = byteArray;
-        for(int i = 0 ; i < array.length ; i++){
-            System.out.println(toBits(array[i]));
-        }
-    }//end toBitArray()
-//-----------------------------------------------------------------------------------------------------------
 }//end class Query
