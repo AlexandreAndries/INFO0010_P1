@@ -230,16 +230,101 @@ public class Answer{
         return bit;
     }//end getBit()
     /*------------------------------------------------------------------------*/
+    // ---------------------------------------------------------------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     private static OutputData[] readAnswer(short ANCOUNT, byte[] answer) throws MessageException{
+        // Initialise position-index
         short pos = SKIP_2BYTES ;
+
+        // Create array of ANCOUNT OutputData objects (corresponds to the
+        // multiple answers received from DNS server)
         OutputData[] out = new OutputData[ANCOUNT];
+        // Temporary variables to hold data extracted from the answers
+        short tmpType ;
+        short RDLength ;
+        int ttl;
+        String ip ;
+        String type ;
 
+        // Loop over the ANCOUNT answers sent by the DNS
+        for(short i = 0 ; i < ANCOUNT ; i++){
+            // Retrieve TYPE related data
+            byte[] tmpB = {(byte) answer[pos], (byte) answer[pos+1]};
+            ByteBuffer tmpBB = ByteBuffer.wrap(tmpB);
+            tmpType = tmpBB.getShort() ;
 
-        // for(short i = 0 ; i < ANCOUNT ; i++){
-        //
-        // }
+            // Increase position-idx by 4 to index to TTL-related bytes
+            pos += 4 ;
 
-        return null;
+            // Retrieve TTL related data
+            byte[] tmpT = {(byte) answer[pos],
+                           (byte) answer[pos+1],
+                           (byte) answer[pos+2],
+                           (byte) answer[pos+3]};
+            ByteBuffer tmpTT = ByteBuffer.wrap(tmpT);
+            ttl = tmpTT.getInt() ;
+            // Increase position-idx by 4 to index to RDLENGTH-related bytes
+            pos += 4 ;
 
+            // Retrieve length of RDATA
+            byte[] tmpR = {(byte) answer[pos], (byte) answer[pos+1]};
+            ByteBuffer tmpRR = ByteBuffer.wrap(tmpR);
+            RDLength = tmpRR.getShort() ;
+
+            // Increase position-idx by 4 to index to RDATA-related bytes
+            pos += 2 ;
+
+            // Retrieve RDATA
+            switch(tmpType){
+                case 1 :
+                    type = "A" ;
+                    byte[] tmpP = {(byte) answer[pos],
+                                   (byte) answer[pos+1],
+                                   (byte) answer[pos+2],
+                                   (byte) answer[pos+3]};
+                    ip = retIPTypeA(tmpP);
+                    // set pos to next first byte of next answer for next iteration
+                    pos += RDLength+2 ;
+                    break ;
+                case 16 :
+                    type = "TXT";
+                    pos++ ;
+                    ByteBuffer bfr = ByteBuffer.allocate(RDLength);
+                    for(short j = pos; j < pos+RDLength-1 ; j++){
+                        bfr.put((byte) answer[j]) ;
+                    }
+                    tmpP = bfr.array() ;
+                    ip = retIPTypeTXT(tmpP);
+                    pos += RDLength+1 ;
+                    break ;
+                default :
+                    type = null ;
+                    ip = null ;
+                    break ;
+            }
+
+            // ---> Create Output object from gathered data.
+            out[i] = new OutputData(ttl, ip, type);
+        }
+
+        // Return OutputData array containing data to print to stdout
+        return out;
     }//end readAnswer()
+    /*------------------------------------------------------------------------*/
+    // Translate RDATA to IP address for type A
+    private static String retIPTypeA(byte[] rdata){
+        String ip = String.valueOf(rdata[0] & 0xff);
+        for (short i = 1; i < rdata.length; i++) {
+            ip = ip + "." + String.valueOf(rdata[i] & 0xff);
+        }
+        return ip;
+    }//end retIPTypeA()
+    /*------------------------------------------------------------------------*/
+    // Translate RDATA to IP address for type TXT
+    private static String retIPTypeTXT(byte[] rdata){
+        String str = Character.toString(rdata[0]);
+        for(short i = 1; i < rdata.length ; i++){
+            str = str + (char)rdata[i] ;
+        }
+        return str ;
+    }//end retIPTypeTXT()
 }//end class Answer

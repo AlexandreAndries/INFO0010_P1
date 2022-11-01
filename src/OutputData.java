@@ -23,13 +23,13 @@ public class OutputData{
     // Class Constants
 
     // Class Variables
-    private short TTL ;
+    private int TTL ;
     private String IP ;
     private String TYPE ;
     /*------------------------------------------------------------------------*/
     /*- Constructor ----------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
-    public OutputData(short ttl, String ip, String type){
+    public OutputData(int ttl, String ip, String type){
         TTL = ttl ;
         IP = ip ;
         TYPE = type ;
@@ -38,7 +38,7 @@ public class OutputData{
     /*- Getters --------------------------------------------------------------*/
     /*------------------------------------------------------------------------*/
     // Returns this output's TTL
-    public short getTTL(){
+    public int getTTL(){
         return TTL;
     }//end getTTL()
     /*------------------------------------------------------------------------*/
@@ -58,8 +58,8 @@ public class OutputData{
         System.out.println("Answer (TYPE=" + TYPE
                                            + ", TTL="
                                            + TTL
-                                           + ", DATA="
+                                           + ", DATA=\""
                                            + IP
-                                           +")");
+                                           +"\")");
     }//end printOutputData()
 }//end class OutputData

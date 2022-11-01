@@ -177,13 +177,10 @@ public class Client{
     }//end stdoutQuestion()
     /*------------------------------------------------------------------------*/
     // Print answer to std out
-    static void stdoutAnswer(String resType, String secTTL, String ansData){
-        System.out.println("Answer (TYPE=" + resType
-                                           + ", TTL="
-                                           + secTTL
-                                           + ", DATA="
-                                           + ansData
-                                           +")");
+    static void stdoutAnswer(OutputData[] out, short ancount){
+        for(short i = 0; i < ancount ; i++){
+            out[i].printOutputData();
+        }
     }//end stdoutAnswer()
     /*------------------------------------------------------------------------*/
     /*- Test print -----------------------------------------------------------*/
@@ -243,6 +240,9 @@ public class Client{
         // print(answer.getHeader()); // --- TEST
         // print(answer.getQuestion()); // --- TEST
         // print(answer.getAnswer()); // --- TEST
+
+        stdoutAnswer(answer.getOutputIPs(), answer.getANCOUNT());
+
 
 
         // ============================ TEST ZONE ==============================
